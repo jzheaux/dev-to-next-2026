@@ -11,6 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: jzheaux/reader@4ebd3a1692208430cb37292e077da51564dd41d1 # main
+      - uses: jzheaux/reader@5bf50b7af35fc962345e5db26012fc12d268c09a # main
         with:
           files: presentation.md
