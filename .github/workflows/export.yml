@@ -1,6 +1,7 @@
 name: Presentation - Export
 
 on:
+  workflow_dispatch:
   push:
     paths: [presentation.md, images/**]
   
