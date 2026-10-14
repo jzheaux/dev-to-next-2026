@@ -17,11 +17,21 @@ The app has no template or build step. Each morning a coding agent copies yester
 |---|---|---|
 | **Spec** | [`DASHBOARD.md`](DASHBOARD.md) | What the app is, and the daily steps for making the next day. It is the real source of the app. |
 | **Tests** | [`verify-dashboard.js`](verify-dashboard.js) | Opens a day in a simulated browser and checks that it behaves as the spec says. Every bug a daily review fixes adds a test here, so the tests hold what the process has learned. |
-| **Example** | [`2026-10-13.html`](2026-10-13.html) | One generated day. The next day is a copy of this one, reviewed and refreshed. |
+| **Examples** | [`2026-10-13.html`](2026-10-13.html), [`2026-10-14.html`](2026-10-14.html) | Two generated days. The 14th is the 13th copied forward, reviewed, and refreshed. |
 
 [`server.js`](server.js) is a small Express server that serves the days and writes answers back into them.
 
 This is a cleaned-up copy of a personal app. In the original, the spec points at the author's own GitHub project, Trello board, and Hardcover shelf, with scripts to fetch each one. Here those sources are replaced by sample data. The videos are real YouTube videos, and the book covers and links come from [Open Library](https://openlibrary.org).
+
+### One cycle, in the history
+
+An agent generated the 14th from the 13th with nothing but the spec to go on. Its commit, "Add 2026-10-14", shows one cycle:
+
+- Its review found four problems: to-do lists that couldn't say they were carried forward, a miscounting work list, formula injection in the CSV export, and `$` patterns corrupting saved answers.
+- It fixed each one and added a test for each that failed without the fix.
+- It left two findings, and its commit message says why.
+
+The 13th no longer passes the newer verifier, because it was made before those fixes. That is expected: a past day is a record of the code it was made with.
 
 ### Running it
 
@@ -34,7 +44,7 @@ npm start
 
 Then open:
 
-- `http://localhost:3000/2026-10-13` for the example day.
+- `http://localhost:3000/2026-10-13` or `http://localhost:3000/2026-10-14` for the example days.
 - `http://localhost:3000/today` for today's day, once you've generated one. Until 4am, this still serves the previous day.
 - `http://localhost:3000/csv` to export every day's answers as CSV.
 
@@ -42,7 +52,7 @@ Use the arrows or the **Next** button to move between slides. Click a slide to m
 
 Answers are saved every 30 seconds, when you press **Save**, and when you close the page. They are also kept in `localStorage`, so nothing is lost if the server is briefly unreachable.
 
-Any day other than today opens as a read-only record. Since October 13 has passed, the example day opens that way: answers are shown as text and can't be changed, but the videos, pitch buttons, and timer still work. To try the day as a form, generate today's day (below).
+Any day other than today opens as a read-only record. Since their dates have passed, the example days open that way: answers are shown as text and can't be changed, but the videos, pitch buttons, and timer still work. To try the day as a form, generate today's day (below).
 
 Settings (environment variables):
 

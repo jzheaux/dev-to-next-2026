@@ -14,7 +14,7 @@ Today's data:
 
 1. Celebrations and conversation starter (Slides 1 and 7): written fresh each day by a model. Tie at least one Slide 1 suggestion to today's to-do items or books. A fun observance is welcome as balance when the day has one.
 
-2. Videos (Slides 3 and 10): search YouTube for each style the slide names.
+2. Videos (Slides 3 and 10): search YouTube for each style the slide names, for example with a web search restricted to youtube.com. Confirm that each pick exists and can be embedded (YouTube's oEmbed endpoint, `https://www.youtube.com/oembed?url=<watch url>`, answers for it and gives its title and channel), and check its length. If nothing fits a style closely, take the closest and say so in the commit.
 
 3. Work to-do (Slide 4): sample data. Write a new, plausible set each day.
 
@@ -24,7 +24,9 @@ Today's data:
 
 To use real data, replace "sample data" with where the data lives and how to read it: a CLI, an API, or a file.
 
-Each data block says, in the comment above it, the date it was fetched. If a source can't be reached, carry the previous day's data forward, mark it stale, and make the slide say so. Never carry another day's data forward silently.
+Each data block says, in the comment above it, the date it was fetched. If a source can't be reached, carry the previous day's data forward, mark it stale (`stale: true` and `fetchedAt: "<the date it was fetched>"` on the block), and make the slide say so. Never carry another day's data forward silently.
+
+Every link written into the page must open. Check each new one, and replace any that doesn't.
 
 == Reviewing the previous day
 
@@ -44,6 +46,8 @@ Then improve by small steps:
 == Verifying and committing
 
 Run `node verify-dashboard.js <file> <date>`. It checks the file's shape, then opens the page in a simulated browser and checks its behavior. Its tests rely on the state block, `POST /save/<date>`, the saved-answer keys, the Next button (`#btnNext`), and the names and shapes of the data blocks (`VIDEOS`, `WORK_TODOS`, `PERSONAL_TODOS`, `BOOKS`, `READING_PROMPTS`), so keep those. If it fails and you can't fix the cause, leave the file for inspection and don't commit it.
+
+The verifier checks the day being generated. Past days are records of the code they were made with, and needn't pass a newer verifier; don't edit them to make them pass.
 
 Commit each day to git (don't push): the new day's file, plus any code and test changes. The commit message lists what the review found, what changed, and what was left and why.
 
