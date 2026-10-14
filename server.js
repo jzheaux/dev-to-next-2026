@@ -42,14 +42,23 @@ app.get('/csv', (req, res) => {
     const s = allData[d] || {};
     rows.push(headers.map(h => {
       const raw = h === 'slide9_books' ? formatBookNotes(s.slide9_books, allBooks[d]) : s[h];
-      const v = String(raw ?? '').replace(/"/g, '""');
-      return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v}"` : v;
+      return csvCell(raw);
     }).join(','));
   }
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename="daily-dashboard.csv"');
   res.send(rows.join('\n'));
 });
+
+// One CSV cell. The export is opened in a spreadsheet, which runs a cell starting
+// with = + - or @ (or a tab or carriage return before one) as a formula, so a typed
+// answer like =HYPERLINK(...) would run there. A leading ' makes it plain text.
+function csvCell(raw) {
+  let v = String(raw ?? '');
+  if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+  v = v.replace(/"/g, '""');
+  return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v}"` : v;
+}
 
 // POST /save/:date — persist state into the HTML file
 app.post('/save/:date', (req, res) => {
@@ -109,8 +118,9 @@ function embedState(html, state) {
   const json = serializeState(state);
   const start = html.indexOf(tag);
   if (start === -1) {
-    // No embedded state block yet — inject one before </head>
-    return html.replace('</head>', `${tag}${json}${closeTag}\n</head>`);
+    // No embedded state block yet — inject one before </head>. A function, because a
+    // replacement string reads $& $' and $` in the answers as patterns.
+    return html.replace('</head>', () => `${tag}${json}${closeTag}\n</head>`);
   }
   const contentStart = start + tag.length;
   const end = html.indexOf(closeTag, contentStart);
@@ -199,7 +209,7 @@ function extractState(file) {
   } catch { return null; }
 }
 
-module.exports = { app, embedState, serializeState, openDate, isStateFor, bookTitles };
+module.exports = { app, embedState, serializeState, openDate, isStateFor, bookTitles, csvCell };
 
 // Listen only when run directly, so verify-dashboard.js can load embedState.
 if (require.main === module) app.listen(PORT, HOST, () => {

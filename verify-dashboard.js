@@ -145,10 +145,10 @@ if (ctx.BOOKS.stale) {
 // above each one says when it was fetched, so one that was missed still names
 // another day.
 for (const name of ['VIDEOS', 'WORK_TODOS', 'PERSONAL_TODOS']) {
-  if (name === 'VIDEOS' && ctx.VIDEOS.stale) {
+  if (ctx[name].stale) {
     // As with the shelf: lists carried forward are not a failure if they say so.
-    if (!ctx.VIDEOS.fetchedAt) fail('VIDEOS is marked stale but does not say when it was fetched');
-    console.log(`note: VIDEOS is stale (fetched ${ctx.VIDEOS.fetchedAt}) — the video slides will show a carried-forward warning`);
+    if (!ctx[name].fetchedAt) fail(`${name} is marked stale but does not say when it was fetched`);
+    console.log(`note: ${name} is stale (fetched ${ctx[name].fetchedAt}) — its slide will show a carried-forward warning`);
     continue;
   }
   const at = scriptMatch[1].match(new RegExp('^// [^\\n]*fetched (\\d{4}-\\d{2}-\\d{2})[^\\n]*\\n(?://[^\\n]*\\n)*const ' + name + ' =', 'm'));
@@ -167,7 +167,7 @@ for (const name of ['VIDEOS', 'WORK_TODOS', 'PERSONAL_TODOS']) {
 //    When a change to the page alters behavior, add a test here for it.
 
 const { JSDOM, VirtualConsole } = require('jsdom');
-const { embedState, openDate, isStateFor, bookTitles } = require('./server.js');
+const { embedState, openDate, isStateFor, bookTitles, csvCell } = require('./server.js');
 
 const day = new Date(y, m - 1, d);
 const at = (dayOffset, h, min = 0) => new Date(y, m - 1, d + dayOffset, h, min);
@@ -1105,6 +1105,71 @@ behavior('the celebrations and the conversation starter are not the previous day
   for (const [i, what] of [[0, 'Slide 1 (celebrations)'], [6, 'Slide 7 (conversation starter)']]) {
     if (mine[i] && mine[i] === theirs[i]) throw new Error(`${what} is the same as in ${earlier}: it is written fresh each day`);
   }
+});
+
+// The spec says a source that can't be reached is carried forward, marked stale, and
+// said so on its slide. The to-do lists had no way to be marked stale: their slides
+// said nothing, and this file failed any list whose comment named an earlier day.
+behavior('to-do lists carried forward from an earlier day say so on their slides', async () => {
+  const since = '1999-12-31';
+  const work = { listUrl: 'https://example.com/carried-work', items: [{ title: 'Carried', url: 'https://example.com/work/1', source: 'x' }] };
+  const personal = { listUrl: 'https://example.com/carried-personal', items: [{ title: 'Carried', url: 'https://example.com/personal/1' }] };
+  const onListSlides = async (w, p) => {
+    const page = openPage(withData(withData(html, 'WORK_TODOS', w), 'PERSONAL_TODOS', p), { now: TODAY });
+    const texts = {};
+    await page.eachSlide(() => {
+      for (const url of [w.listUrl, p.listUrl]) {
+        if (page.doc.querySelector('.slide-body a[href="' + url + '"]')) texts[url] = card(page).textContent;
+      }
+    });
+    if (Object.keys(texts).length !== 2) throw new Error('expected two to-do slides, found ' + Object.keys(texts).length);
+    if (page.errors.length) throw new Error(page.errors[0]);
+    return Object.values(texts);
+  };
+  const carried = await onListSlides({ ...work, stale: true, fetchedAt: since }, { ...personal, stale: true, fetchedAt: since });
+  if (!carried.every(t => t.includes(since))) throw new Error('a to-do slide shows a list from ' + since + ' without saying so');
+  const fresh = await onListSlides(work, personal);
+  if (fresh.some(t => /carried forward/i.test(t))) throw new Error('a to-do slide calls a list fetched today carried forward');
+});
+
+// The counter counted every saved check, including ones for items not on the day's
+// list, so a hand-edited or hostile state read "1 of 4 reviewed" with nothing checked.
+behavior('the work list counts only checks on its own items', async () => {
+  const saved = embedState(html, { date: expectedDate, slide4_reviewed: { 'https://example.com/not-on-the-list': true } });
+  const page = openPage(saved, { now: TODAY });
+  let found = false;
+  await page.eachSlide(() => {
+    const m = card(page).textContent.match(/(\d+) of (\d+) reviewed/);
+    if (!m) return;
+    found = true;
+    if (m[1] !== '0') throw new Error('with no item on the list checked, the work list reads "' + m[0] + '"');
+  });
+  if (!found && ctx.WORK_TODOS.items.length) throw new Error('no work list counter found');
+});
+
+// GET /csv is opened in a spreadsheet, which runs a cell that starts with = + - or @
+// as a formula: a typed answer like =HYPERLINK(...) would run there.
+behavior('the export writes answers so a spreadsheet does not run them as formulas', async () => {
+  if (typeof csvCell !== 'function') throw new Error('server.js does not say how it writes a CSV cell');
+  for (const v of ['=HYPERLINK("https://example.com","x")', '+1+1', '-2+3', '@SUM(A1)', '\t=1', '\r=1']) {
+    const cell = csvCell(v).replace(/^"/, '');
+    if (/^[=+\-@\t\r]/.test(cell)) throw new Error('the export writes ' + JSON.stringify(v) + ' as a cell a spreadsheet would run');
+  }
+  for (const [v, want] of [['7', '7'], ['a, b', '"a, b"'], ['say "hi"', '"say ""hi"""'], ['', ''], [undefined, '']]) {
+    if (csvCell(v) !== want) throw new Error('the export writes ' + JSON.stringify(v) + ' as ' + csvCell(v) + ', expected ' + want);
+  }
+});
+
+// With no state block to replace, the server added one with String.replace, which
+// reads $& $' and $` in what it inserts: an answer holding them came back changed.
+behavior('the server adds a state block to a day without one, whatever the answers hold', async () => {
+  const bare = html.replace(/<script id="state" type="application\/json">[\s\S]*?<\/script>\n?/, '');
+  const answer = "costs $5 $& $' $` $$ tops";
+  const saved = embedState(bare, { date: expectedDate, slide5_g1: answer });
+  const block = saved.match(/<script id="state" type="application\/json">([\s\S]*?)<\/script>/);
+  let restored;
+  try { restored = block && JSON.parse(block[1]); } catch { throw new Error('the added state block is not valid JSON'); }
+  if (!restored || restored.slide5_g1 !== answer) throw new Error('an answer holding $ patterns did not round-trip into a day without a state block');
 });
 
 (async () => {

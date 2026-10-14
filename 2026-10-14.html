@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Dashboard — October 14, 2026</title>
+  <script id="state" type="application/json">{"date":"2026-10-14"}</script>
+  <style>
+    :root {
+      --bg: #f5f4f0; --card: #ffffff; --primary: #4a7c59; --primary-dark: #3a6347;
+      --primary-light: #e8f2ec; --text: #1a1a1a; --muted: #666;
+      --border: #e0dbd4; --shadow: 0 2px 16px rgba(0,0,0,0.07); --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
+    .header-title { font-size: 1rem; font-weight: 700; color: var(--primary); white-space: nowrap; }
+    .header-date  { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+    .progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width .4s ease; }
+    .progress-text { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+    .save-btn { padding: 6px 14px; background: transparent; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; color: var(--muted); cursor: pointer; white-space: nowrap; transition: all .15s; }
+    .save-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .save-btn.saving { color: var(--primary); border-color: var(--primary); }
+    .save-btn.saved { color: #8ec9a2; border-color: #8ec9a2; }
+
+    .main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 32px 20px 16px; }
+    .slide-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 40px; width: 100%; max-width: 720px; min-height: 420px; display: flex; flex-direction: column; animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .slide-eyebrow { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--primary); margin-bottom: 6px; }
+    .slide-title { font-size: 1.55rem; font-weight: 700; margin-bottom: 24px; line-height: 1.25; }
+    .slide-title .done-check { color: var(--primary); margin-left: 8px; }
+    .slide-body { flex: 1; display: flex; flex-direction: column; }
+
+    .nav-dots { display: flex; gap: 6px; justify-content: center; margin-top: 20px; flex-wrap: wrap; max-width: 720px; width: 100%; }
+    .nav-dot { height: 7px; border-radius: 4px; background: var(--border); cursor: pointer; transition: all .2s; width: 7px; }
+    .nav-dot.current { background: var(--primary); width: 22px; }
+    .nav-dot.done { background: #8ec9a2; }
+
+    .bottom-nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; max-width: 720px; width: 100%; margin: 0 auto; }
+    .btn { padding: 10px 26px; border: none; border-radius: 9px; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all .15s; }
+    .btn:disabled { opacity: .35; cursor: default; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:not(:disabled):hover { background: var(--bg); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:not(:disabled):hover { background: var(--primary-dark); }
+    .btn-complete { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 9px; border: 2px solid var(--primary); background: transparent; color: var(--primary); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all .15s; margin-top: 20px; align-self: flex-start; }
+    .btn-complete:hover, .btn-complete.done { background: var(--primary); color: #fff; }
+
+    input[type="text"], input[type="number"], textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: inherit; background: var(--bg); color: var(--text); transition: border-color .15s; }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+    textarea { resize: vertical; min-height: 100px; }
+    label { display: block; font-size: 0.88rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+    /* Mood */
+    .mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .mood-q { padding: 18px; border-radius: 10px; cursor: pointer; border: 3px solid transparent; transition: all .2s; }
+    .mood-q:hover { transform: scale(1.02); }
+    .mood-q.selected { border-color: rgba(0,0,0,.35); }
+    .mood-q-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; opacity: .6; margin-bottom: 6px; }
+    .mood-q-emotions { font-size: 0.88rem; line-height: 1.55; }
+    .mood-q-ha-neg { background: #fee2e2; } .mood-q-ha-pos { background: #fef9c3; }
+    .mood-q-la-neg { background: #e0e7ff; } .mood-q-la-pos { background: #dcfce7; }
+    .mood-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mood-chip { padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(0,0,0,.18); background: rgba(255,255,255,.7); font: inherit; font-size: 0.85rem; color: var(--text); cursor: pointer; }
+    .mood-chip:hover { background: #fff; }
+    .mood-chip.on { background: var(--text); border-color: var(--text); color: #fff; }
+    .mood-selected { margin-top: 12px; text-align: center; font-size: 1.05rem; font-weight: 600; color: var(--primary); min-height: 26px; }
+
+    /* Celebrations */
+    .celebration-item { background: var(--bg); border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; }
+    .celebration-name { font-weight: 700; margin-bottom: 3px; }
+    .celebration-desc { font-size: 0.88rem; color: var(--muted); }
+    .ways-section { margin-top: 20px; }
+    .ways-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 10px; }
+    .way-item { display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.92rem; line-height: 1.5; }
+    .way-bullet { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+    .way-text { flex: 1; min-width: 0; }
+
+    /* Exercise */
+    .exercise-options { display: flex; flex-direction: column; gap: 10px; }
+    .exercise-opt { display: flex; align-items: center; gap: 14px; padding: 15px 18px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; transition: all .15s; }
+    .exercise-opt:hover { border-color: var(--primary); background: var(--primary-light); }
+    .exercise-opt.selected { border-color: var(--primary); background: var(--primary-light); }
+    .exercise-badge { width: 30px; height: 30px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.88rem; flex-shrink: 0; }
+    .exercise-opt.selected .exercise-badge { background: var(--primary); color: #fff; }
+
+    /* YouTube grid */
+    .yt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .yt-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; cursor: pointer; transition: all .15s; }
+    .yt-card:hover { border-color: var(--primary); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .yt-card.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+    .yt-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .yt-card-info { padding: 8px 10px; }
+    .yt-card-style { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--primary); margin-bottom: 3px; }
+    .yt-card-title { font-size: 0.82rem; font-weight: 500; line-height: 1.35; color: var(--text); }
+    .yt-card-channel { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+    .yt-embed-wrap { margin-bottom: 16px; border-radius: 10px; overflow: hidden; }
+    .yt-embed-wrap iframe { display: block; width: 100%; aspect-ratio: 16/9; border: none; }
+
+    /* GitHub task list */
+    .task-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; margin-bottom: 16px; padding-right: 4px; }
+    .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); transition: all .15s; cursor: pointer; }
+    .task-item:hover { border-color: var(--primary); background: var(--primary-light); }
+    .task-item.checked { background: var(--primary-light); border-color: #8ec9a2; opacity: .7; }
+    .task-cb { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .15s; }
+    .task-item.checked .task-cb { background: var(--primary); border-color: var(--primary); color: #fff; font-size: 0.7rem; }
+    .task-text { flex: 1; font-size: 0.88rem; line-height: 1.45; }
+    .task-text a { color: var(--primary); text-decoration: none; font-size: 0.78rem; display: block; margin-top: 2px; }
+    .task-text a:hover { text-decoration: underline; }
+    .task-repo { font-size: 0.73rem; color: var(--muted); display: block; margin-top: 1px; }
+    .task-counter { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; }
+
+    /* To-do lists */
+    .todo-box { background: #f0f4ff; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+    .todo-title { font-weight: 700; margin-bottom: 4px; }
+    .todo-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
+    .todo-cards { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .todo-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; text-decoration: none; color: var(--text); font-size: 0.9rem; transition: all .15s; }
+    .todo-card:hover { border-color: var(--primary); color: var(--primary); }
+    .todo-card-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+    .todo-empty { font-size: 0.88rem; color: var(--muted); font-style: italic; margin-bottom: 14px; }
+
+    /* Reading */
+    .reading-prompt { background: #fef9c3; border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; font-size: 0.95rem; line-height: 1.5; }
+    .reading-prompt-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+    .stale-note { background: #fff4e5; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; color: #8a5a00; }
+    .books { display: flex; flex-direction: column; gap: 18px; margin-bottom: 22px; }
+    .book { border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .book-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
+    .book-cover { width: 52px; height: 78px; object-fit: cover; border-radius: 5px; flex-shrink: 0; background: var(--primary-light); }
+    .book-cover-blank { display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .book-meta { flex: 1; min-width: 0; }
+    .book-title { font-weight: 700; font-size: 0.98rem; line-height: 1.3; }
+    .book-title a { color: inherit; text-decoration: none; }
+    .book-title a:hover { color: var(--primary); }
+    .book-sub { font-size: 0.83rem; color: var(--muted); margin-top: 3px; }
+    .book-bar { height: 5px; border-radius: 3px; background: var(--border); margin-top: 9px; overflow: hidden; }
+    .book-bar-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+    .book-note { min-height: 76px; }
+    /* Shelf setup note */
+    .shelf-setup { background: #fff8d6; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px; font-size: 0.88rem; line-height: 1.6; }
+    .shelf-setup strong { color: #7a5c00; }
+    .gr-shelf-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--primary); font-weight: 600; text-decoration: none; font-size: 0.88rem; }
+    .gr-shelf-link:hover { text-decoration: underline; }
+
+    /* Note buttons */
+    .note-btn { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; background: #e8f2ec; border: 1px solid var(--primary); border-radius: 4px; font-size: 0.82rem; font-weight: 700; color: var(--primary); cursor: pointer; font-family: inherit; transition: all .15s; vertical-align: baseline; }
+    .note-btn:hover { background: var(--primary); color: #fff; }
+    .note-btn::before { content: '♩'; font-size: 0.75rem; }
+
+    /* Singing warmup */
+    .warmup-progress { display: flex; gap: 6px; margin-bottom: 24px; }
+    .warmup-dot { flex: 1; height: 6px; border-radius: 3px; background: var(--border); transition: background .3s; }
+    .warmup-dot.active { background: var(--primary); } .warmup-dot.past { background: #8ec9a2; }
+    .warmup-step { background: var(--bg); border-radius: 12px; padding: 24px; flex: 1; display: flex; flex-direction: column; }
+    .warmup-step-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+    .warmup-step-name { font-size: 1.1rem; font-weight: 700; }
+    .warmup-step-dur { font-size: 0.85rem; color: var(--muted); }
+    .warmup-divider { height: 1px; background: var(--border); margin: 14px 0; }
+    .warmup-ex-title { font-size: 0.92rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    .warmup-notes { font-size: 0.9rem; line-height: 1.75; color: var(--text); padding-left: 18px; }
+    .warmup-notes li { margin-bottom: 3px; }
+    .think-box { background: #fef9c3; border-radius: 7px; padding: 10px 14px; font-size: 0.86rem; font-style: italic; margin-top: 10px; line-height: 1.5; }
+    .warning-box { background: #fee2e2; border-radius: 7px; padding: 10px 14px; font-size: 0.86rem; margin-top: 10px; line-height: 1.5; }
+    .timer-block { text-align: center; margin: 16px 0; }
+    .timer-display { font-size: 2.6rem; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+    .timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+    .timer-btn { padding: 8px 20px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+    .timer-btn.start { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .timer-btn:hover:not(.start) { border-color: var(--primary); color: var(--primary); }
+    .warmup-step-nav { display: flex; justify-content: space-between; margin-top: 16px; }
+    .warmup-final { text-align: center; padding: 24px; background: var(--primary-light); border-radius: 12px; }
+    .warmup-final-title { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+
+    /* Common */
+    .info-box { background: var(--primary-light); border-radius: 10px; padding: 14px 18px; font-size: 0.88rem; line-height: 1.55; margin-bottom: 20px; color: #2d5a3d; }
+    .ext-link { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; text-decoration: none; color: var(--text); font-size: 0.95rem; font-weight: 500; transition: all .15s; }
+    .ext-link:hover { border-color: var(--primary); color: var(--primary); }
+    .done-banner { display: flex; align-items: center; gap: 10px; background: var(--primary-light); border-radius: 8px; padding: 12px 16px; margin-top: 18px; color: var(--primary); font-weight: 600; font-size: 0.92rem; }
+    .gratitude-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+    .gratitude-num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; margin-top: 10px; }
+    .checkin-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+    .checkin-label { font-size: 0.95rem; font-weight: 600; }
+    .social-prompt { background: #fef9c3; border-radius: 10px; padding: 16px 18px; margin-bottom: 20px; font-size: 0.92rem; line-height: 1.6; }
+    .social-prompt-title { font-weight: 700; margin-bottom: 8px; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .checkbox-toggle { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-radius: 9px; border: 1px solid var(--border); cursor: pointer; transition: all .15s; }
+    .checkbox-toggle:hover { border-color: var(--primary); }
+    .checkbox-toggle.checked { border-color: var(--primary); background: var(--primary-light); }
+    .check-box { width: 22px; height: 22px; border-radius: 5px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+    .checkbox-toggle.checked .check-box { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    @media (max-width: 600px) {
+      .slide-card { padding: 24px 20px; }
+      .mood-grid { grid-template-columns: 1fr; }
+      .yt-grid { grid-template-columns: repeat(2, 1fr); }
+      .header-date { display: none; }
+    }
+    /* ── Read-only record mode (past days) ─────────────────────────────── */
+    .record-value { background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--primary);
+      border-radius: 8px; padding: 10px 13px; margin: 0 0 6px; font-size: 0.95rem; line-height: 1.55;
+      white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+    .record-value.record-empty { color: var(--muted); font-style: italic; border-left-color: var(--border); }
+    .record-status { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 11px 14px;
+      border-radius: 10px; font-size: 0.9rem; font-weight: 600; }
+    .record-status.yes { background: var(--primary-light); color: var(--primary-dark); }
+    .record-status.no  { background: var(--bg); color: var(--muted); border: 1px dashed var(--border); }
+    .frozen { pointer-events: none; }
+    .frozen a { pointer-events: auto; }
+    .frozen.dim { opacity: 0.4; }
+    .readonly-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+      border-radius: 999px; background: var(--bg); border: 1px solid var(--border);
+      color: var(--muted); font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+    .readonly-note { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; padding: 10px 14px;
+      border-radius: 10px; background: var(--bg); border: 1px solid var(--border);
+      color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <span class="header-title">Daily Dashboard</span>
+  <span class="header-date">October 14, 2026</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <span class="progress-text" id="progressText"></span>
+  <button class="save-btn" id="saveBtn" onclick="saveToServer()">Save</button>
+</header>
+
+<main class="main">
+  <div class="slide-card" id="slideCard"></div>
+  <div class="nav-dots" id="navDots"></div>
+</main>
+
+<div class="bottom-nav">
+  <button class="btn btn-ghost" id="btnPrev" onclick="navigate(-1)">← Back</button>
+  <button class="btn btn-primary" id="btnNext" onclick="navigate(1)">Next →</button>
+</div>
+
+<script>
+'use strict';
+
+// ─── Constants ─────────────────────────────────────────────────────────────
+
+const DATE = '2026-10-14';
+const SLIDE_ORDER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
+const SLIDE_LABELS = { 0:'Mood',1:'Celebrations',2:'Exercise',3:'Meditation',4:'Work To-Do',5:'Gratitude',6:'Body Check-In',7:'Social',8:'Personal To-Do',9:'Learning',10:'Body Scan',11:'Singing Warmup' };
+
+// Each block below is the day's data, written in at generation time from wherever
+// it is kept (see DASHBOARD.md). This copy has no sources connected: the videos are
+// real, and the lists and the shelf are sample data. Each block says when it was
+// fetched, so one left over from an earlier day is caught by verify-dashboard.js.
+
+// Videos — fetched 2026-10-14, from a YouTube search for each style.
+const VIDEOS = {
+  meditation: [
+    {"style":"Kirtan","id":"41rXTnjakV4","title":"Kirtan Kriya, 12 minutes of meditation that saves the brain","channel":"Natural Remedies"},
+    {"style":"Lovingkindness","id":"q4orrlF30LQ","title":"Loving Kindness Meditation (15 min Guided) - Metta Meditation","channel":"Radiant Stillness"},
+    {"style":"Vipassana","id":"PvAEG5muUnU","title":"15 Minute Guided Vipassana Meditation","channel":"Declutter The Mind"},
+    {"style":"Inner-Child","id":"_2BiTngwHKE","title":"Inner Child Healing and Forgiveness (15 Minute Guided Meditation)","channel":"Great Meditation"},
+    {"style":"Parental Trauma","id":"kXB88ZpUfbE","title":"Healing the Mother Wound Guided Meditation/LISA ROMANO","channel":"Lisa A. Romano Breakthrough Life Coach Inc"},
+    {"style":"Religious Trauma","id":"1gmcJdNI19E","title":"Healing Religious Trauma: Connecting with Your Body for Spiritual Growth","channel":"Sensing Ground: Living with all Eight Senses"},
+    {"style":"Relationship Trauma","id":"acsNgYfHmG0","title":"Healing From Heartbreak: Guided Meditation for Breakup Recovery Getting Closure & Becoming Stronger","channel":"Clarity Psychological Services"},
+  ],
+  body: [
+    {"style":"Body Scan","id":"8v8Gl4wDWkc","title":"5 Minute Body Scan Guided Meditation for Mindfulness & Relaxation","channel":"YOGA UPLOAD with Maris Aylward"},
+    {"style":"Morning Stretch","id":"sAf67xFS-qE","title":"5 Min. Morning Stretch | Full Body Flexibility Routine for Beginner","channel":"Mady Morrison"},
+    {"style":"Yoga for Tension","id":"BiEOsvQzEZg","title":"5 minute Yoga for Neck & Shoulder Tension","channel":"SarahBethYoga"},
+    {"style":"Breathwork","id":"9fEo9my03Ks","title":"5 Minute Calming Breathwork | Yoga With Adriene","channel":"Yoga With Adriene"},
+  ],
+};
+
+// Work to-do — fetched 2026-10-14. Sample data.
+const WORK_TODOS = {
+  listUrl: "https://example.com/work",
+  items: [
+    {"title":"Return RFC 9457 problem details from the orders API instead of bare error strings","url":"https://example.com/work/105","source":"api"},
+    {"title":"Pair with Priya on the flaky checkout integration test","url":"https://example.com/work/106","source":"web-app"},
+    {"title":"Draft the Q4 on-call rotation and share it with the team","url":"https://example.com/work/107","source":"ops"},
+    {"title":"Upgrade the build to the latest LTS JDK","url":"https://example.com/work/102","source":"build"},
+    {"title":"Prepare three slides on the new sign-in flow for Thursday's demo","url":"https://example.com/work/108","source":"web-app"},
+  ],
+};
+
+// Personal to-do — fetched 2026-10-14. Sample data.
+const PERSONAL_TODOS = {
+  listUrl: "https://example.com/personal",
+  items: [
+    {"title":"Pick up apples at the farmers market","url":"https://example.com/personal/204"},
+    {"title":"Schedule a dental cleaning","url":"https://example.com/personal/202"},
+    {"title":"Swap the winter tires on before the first frost","url":"https://example.com/personal/205"},
+    {"title":"Send Mom the photos from the weekend","url":"https://example.com/personal/206"},
+  ],
+};
+
+// Books — fetched 2026-10-14. Sample data, with covers and links from Open Library.
+// One book per line, as JSON: the CSV export in server.js reads the titles that way.
+const BOOKS = {
+  stale: false,
+  fetchedAt: "2026-10-14",
+  shelfUrl: "https://example.com/shelf",
+  items: [
+    {"title":"A Philosophy of Software Design","authors":["John K. Ousterhout"],"pages":193,"readPages":93,"percent":48,"cover":"https://covers.openlibrary.org/b/id/10352230-M.jpg","url":"https://openlibrary.org/works/OL21221785W","key":"OL21221785W"},
+    {"title":"Four Thousand Weeks","authors":["Oliver Burkeman"],"pages":280,"readPages":14,"percent":5,"cover":"https://covers.openlibrary.org/b/id/11990973-M.jpg","url":"https://openlibrary.org/works/OL22355777W","key":"OL22355777W"},
+    {"title":"The Pragmatic Programmer","authors":["Andy Hunt","Dave Thomas"],"pages":352,"readPages":338,"percent":96,"cover":"https://covers.openlibrary.org/b/id/10143650-M.jpg","url":"https://openlibrary.org/works/OL5748544W","key":"OL5748544W"},
+  ],
+};
+
+// One prompt per day, so the blank box has a way in. Indexed by day-of-year, so
+// the prompt is stable for a given date but differs from yesterday's.
+const READING_PROMPTS = [
+  'What surprised you?',
+  'What would you argue with the author about?',
+  'Whose voice is missing from this?',
+  'What will you still remember in a year?',
+  'Where did you catch yourself skimming, and why?',
+  'What did this change your mind about, even slightly?',
+  'What would you tell someone to make them pick it up?',
+];
+
+// ─── State ──────────────────────────────────────────────────────────────────
+
+let currentIndex = 0;
+// A day other than today is a record, not a form: inputs render as paragraphs and
+// nothing can be written back.
+//
+// The boundary is not midnight. A day stays open for GRACE_HOURS into the next one,
+// so a session that runs past midnight is never sealed mid-sentence. This clock is
+// the browser's — the user's own machine — which is the one worth trusting about
+// what day it is for them. The server keeps a much wider grace (see server.js),
+// because its clock is the one that has been wrong before.
+const GRACE_HOURS = 4;
+
+function activeDate(now = new Date()) {
+  const d = new Date(now.getTime() - GRACE_HOURS * 3600000);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+let READONLY = DATE < activeDate();
+
+// Declared before loadState(), which sets it when a newer local copy wins.
+let _dirty = false;
+let state = loadState();
+// The day's answers as last accepted, for closeDayIfOver() to go back to.
+let _kept = JSON.stringify(state);
+
+function defaultState() {
+  return {
+    date: DATE,
+    mood: null, mood_emotion: null,
+    slide1_done: false,
+    slide2_exercise: null, slide2_notes: '',
+    slide3_done: false, slide3_video: null,
+    slide4_reviewed: {}, slide4_done: false,
+    slide5_g1: '', slide5_g2: '', slide5_g3: '', slide5_done: false,
+    slide6_sleep: '', slide6_water: '', slide6_meal: false, slide6_done: false,
+    slide7_done: false, slide7_contact: '',
+    slide8_done: false,
+    slide9_done: false, slide9_learning: '', slide9_books: {},
+    slide10_done: false, slide10_video: null,
+    slide11_done: false,
+  };
+}
+
+function loadState() {
+  // Embedded state is the source of truth
+  try {
+    const el = document.getElementById('state');
+    if (el) {
+      const embedded = JSON.parse(el.textContent);
+      if (embedded && embedded.date) {
+        // On a frozen day the embedded state is definitive — a stale localStorage
+        // copy must never be allowed to rewrite a closed record.
+        if (READONLY) return shaped(Object.assign(defaultState(), embedded));
+        // Check if localStorage has a newer version
+        // A freshly generated day has no _ts, so any saved local copy is newer.
+        // A local copy that does not parse is ignored: throwing here would skip the
+        // file's answers too and open the day blank.
+        let lsData = null;
+        try { lsData = JSON.parse(readLocal('dashboard-'+DATE)); } catch {}
+        if (lsData && lsData._ts && (!embedded._ts || lsData._ts > embedded._ts)) {
+          // localStorage is newer — use it and flag it to be saved back
+          _dirty = true;
+          return shaped(Object.assign(defaultState(), lsData, { date: DATE }));
+        }
+        return shaped(Object.assign(defaultState(), embedded));
+      }
+    }
+  } catch {}
+  // Fall back to localStorage
+  try {
+    const s = readLocal('dashboard-'+DATE);
+    return s ? shaped(Object.assign(defaultState(), JSON.parse(s))) : defaultState();
+  } catch { return defaultState(); }
+}
+
+// The work-list checks and the book notes are written into, so each has to be a plain
+// object. A saved copy holding anything else there (a block edited by hand, a POST
+// from something other than this page) made checking an item or typing a book note
+// throw, and an array took the answer and then dropped it when the state was saved.
+function shaped(s) {
+  for (const key of ['slide4_reviewed', 'slide9_books']) {
+    if (!s[key] || typeof s[key] !== 'object' || Array.isArray(s[key])) s[key] = {};
+  }
+  return s;
+}
+
+function save() {
+  if (READONLY || closeDayIfOver()) return;   // a past day is a record; refuse all writes
+  state._ts = Date.now();
+  _kept = JSON.stringify(state);
+  writeLocal('dashboard-'+DATE, _kept);
+  _dirty = true;
+  updateChrome();
+}
+
+// READONLY is worked out when the page loads, but a tab left open overnight is
+// still showing yesterday at 4am, and would go on taking today's answers into
+// yesterday's record. Once the day is over the page becomes the record: whatever
+// was accepted before the boundary is sent, and the edit that ran into it is dropped
+// (handlers write to state before calling save(), so state goes back to _kept).
+function closeDayIfOver() {
+  if (READONLY || DATE >= activeDate()) return false;
+  state = JSON.parse(_kept);
+  saveOnClose();
+  READONLY = true;
+  showReadonlyBadge();
+  renderSlide();
+  return true;
+}
+
+function loadTodos() { return readLocal('dashboard-personal-todos') || ''; }
+function saveTodos(v) { writeLocal('dashboard-personal-todos', v); }
+
+// localStorage throws in some private modes and when full. The server copy is the
+// record, so a failed local write is not worth losing the edit over.
+function readLocal(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function writeLocal(key, value) { try { localStorage.setItem(key, value); } catch {} }
+
+// ─── Server persistence ─────────────────────────────────────────────────────
+
+async function saveToServer() {
+  if (READONLY || closeDayIfOver()) return;
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Saving…'; btn.classList.add('saving'); btn.classList.remove('saved');
+  // An answer typed while the request is in flight is not in it, so the page is
+  // only clean if nothing changed since this copy was sent.
+  const sent = state._ts;
+  try {
+    const res = await fetch('/save/' + DATE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    });
+    if (res.ok) {
+      if (state._ts === sent) { _dirty = false; _unconfirmed = false; }
+      btn.textContent = 'Saved'; btn.classList.remove('saving'); btn.classList.add('saved');
+      setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); }, 2000);
+    } else {
+      _dirty = true;
+      btn.textContent = 'Save failed'; btn.classList.remove('saving');
+      setTimeout(() => { btn.textContent = 'Save'; }, 2000);
+    }
+  } catch {
+    _dirty = true;
+    btn.textContent = 'Offline'; btn.classList.remove('saving');
+    setTimeout(() => { btn.textContent = 'Save'; }, 2000);
+  }
+}
+
+// Auto-save every 30 seconds if dirty
+if (!READONLY) setInterval(() => { if (!closeDayIfOver() && _dirty) saveToServer(); }, 30000);
+
+// Save when the page goes away. iOS does not reliably fire beforeunload, so
+// pagehide covers it; whichever fires first sends the beacon.
+// A beacon only says the browser took the request, never whether the server got it:
+// away from the server it is accepted and then dropped. _unconfirmed remembers that the
+// last word was a beacon, for a page that turns out to be still open.
+let _unconfirmed = false;
+function saveOnClose() {
+  if (READONLY || !_dirty) return;
+  const sent = navigator.sendBeacon('/save/' + DATE,
+    new Blob([JSON.stringify(state)], { type: 'application/json' }));
+  if (sent) { _dirty = false; _unconfirmed = true; }
+}
+window.addEventListener('beforeunload', saveOnClose);
+window.addEventListener('pagehide', saveOnClose);
+// A phone that is locked, or switched to another app, fires neither: the page is
+// hidden and may be discarded there without another word. Hidden is the last
+// moment the page is sure to hear about, so the answers go then too.
+// Coming back, the page asks again with a request it can hear the answer to. If that
+// fails the answers are unsaved again, and the autosave keeps trying.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveOnClose();
+  else if (_unconfirmed) saveToServer();
+});
+
+// ─── Singing timer state ─────────────────────────────────────────────────────
+
+const SINGING_STEPS = [
+  {
+    name:'Reset: Effort → Air', dur:'2 min', seconds:120,
+    exercises:[{ title:'Sighing "oo"', notes:[
+      ['Start around ',n('C4'),', slide down to ',n('G3'),' and back up'],
+      ['Vowel: "oo" as in "food"'],
+      ['Very soft — warm air on glass'],
+      ['No gripping, no effort'],
+    ], think:'If this feels trivial, you\'re doing it right.' }],
+  },
+  {
+    name:'Falsetto Rehab', dur:'3 min', seconds:180,
+    exercises:[
+      { title:'Breathy "hoo"', notes:[
+        ['Range: ',n('G4'),' → ',n('C5')],
+        ['Light, airy onset — owl sound'],
+        ['Air leads, not cord closure'],
+        ['No attempt to sound "good"'],
+      ]},
+      { title:'Slightly cleaner "oo"', notes:[
+        ['Same range (',n('G4'),' → ',n('C5'),')'],
+        ['Reduce breathiness just a bit'],
+        ['Still very light'],
+      ], think:'Goal: falsetto becomes something you can choose — not something that stops you cold.' },
+    ],
+  },
+  {
+    name:'Mix Builder / Bridge', dur:'4 min', seconds:240,
+    exercises:[{ title:'"Gee" (like "geese")', notes:[
+      ['5-note scale: ',n('E4'),' → ',n('A4'),', then move up each round'],
+      ['Focus area: ',n('G4'),' → ',n('B4')],
+      ['Forward placement — almost nasal, but not quite'],
+      ['Light, speech-like — no weight added'],
+    ], warn:'If it starts to feel like pushing: reset lighter.' }],
+  },
+  {
+    name:['Target Work: ',n('A4'),' → ',n('C5')], dur:'4–6 min', seconds:300,
+    exercises:[
+      { title:'"Nay" (bratty tone)', notes:[
+        ['Short bursts: ',n('A4'),' → ',n('B4'),' → ',n('C5')],
+        ['Think: annoying cartoon voice, slight edge'],
+        ['Accesses mix without adding weight'],
+      ]},
+      { title:'Open vowel shaping', notes:[
+        ['Sing "ah" → modify toward "uh" as pitch rises'],
+        [n('B4'),': not "AHHH" — more like an "UH/AH blend"'],
+      ]},
+      { title:['"Touch-and-go" ', n('C5')], notes:[
+        ['Tap it and back off — do not hold it'],
+        ['Think: "visit, don\'t live there"'],
+      ], warn:['Resist the urge to prove you can hit ',n('C5'),'. That instinct reinforces the exact tension you\'re undoing.'] },
+    ],
+  },
+];
+
+function n(note) { return { note }; }
+
+let singingStep = 0, singingInterval = null;
+let singingRemain = SINGING_STEPS.map(s => s.seconds);
+let singingRunning = false, singingDone = [false,false,false,false];
+
+// ─── Web Audio ───────────────────────────────────────────────────────────────
+
+const NOTE_FREQ = { G3:196.00, C4:261.63, E4:329.63, G4:392.00, A4:440.00, B4:493.88, C5:523.25 };
+let audioCtx = null;
+
+function playNote(note) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // A phone suspends the context when the page goes to the background or the screen
+  // locks, and does not always start it again: the notes are then silent, and all
+  // sound at once when it does. A tap is allowed to start it.
+  if (audioCtx.state !== 'running') audioCtx.resume();
+  const freq = NOTE_FREQ[note];
+  if (!freq) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.45, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 1.8);
+}
+
+function renderNoteSegment(seg) {
+  if (typeof seg === 'string') return esc(seg);
+  if (seg.note) return `<button class="note-btn" onclick="playNote('${seg.note}')">${seg.note}</button>`;
+  return '';
+}
+function renderNoteList(parts) { return Array.isArray(parts) ? parts.map(renderNoteSegment).join('') : esc(parts); }
+
+// ─── Navigation ─────────────────────────────────────────────────────────────
+
+function navigate(dir) {
+  stopSingingTimer();
+  const next = currentIndex + dir;
+  if (next < 0 || next >= SLIDE_ORDER.length) return;
+  currentIndex = next;
+  renderSlide();
+}
+function goToSlide(idx) { stopSingingTimer(); currentIndex = idx; renderSlide(); }
+
+// ─── Chrome ──────────────────────────────────────────────────────────────────
+
+function isSlideDone(id) {
+  switch(id) {
+    case 0: return !!state.mood;
+    case 1: return state.slide1_done;
+    case 2: return !!state.slide2_exercise;
+    case 3: return state.slide3_done;
+    case 4: return state.slide4_done;
+    case 5: return state.slide5_done;
+    case 6: return state.slide6_done;
+    case 7: return state.slide7_done;
+    case 8: return state.slide8_done;
+    case 9: return state.slide9_done;
+    case 10: return state.slide10_done;
+    case 11: return state.slide11_done;
+  }
+}
+function updateChrome() {
+  const total = SLIDE_ORDER.length;
+  const done  = SLIDE_ORDER.filter(id => isSlideDone(id)).length;
+  document.getElementById('progressFill').style.width = Math.round(done/total*100)+'%';
+  document.getElementById('progressText').textContent = done+'/'+total;
+  document.getElementById('btnPrev').disabled = currentIndex === 0;
+  document.getElementById('btnNext').disabled = currentIndex === SLIDE_ORDER.length-1;
+  document.getElementById('btnNext').textContent = currentIndex === SLIDE_ORDER.length-1 ? 'Finish' : 'Next →';
+  const dots = document.getElementById('navDots');
+  dots.innerHTML = '';
+  SLIDE_ORDER.forEach((id,i) => {
+    const d = document.createElement('div');
+    d.className = 'nav-dot'+(i===currentIndex?' current':'')+(isSlideDone(id)&&i!==currentIndex?' done':'');
+    d.title = SLIDE_LABELS[id]; d.onclick = ()=>goToSlide(i);
+    dots.appendChild(d);
+  });
+}
+
+// ─── Slide renderer dispatch ─────────────────────────────────────────────────
+
+function renderSlide() {
+  const id = SLIDE_ORDER[currentIndex];
+  const card = document.getElementById('slideCard');
+  // Drawn off the page first, so that a video already playing can stay (see keepPlayer).
+  const draft = document.createElement('div');
+  ({ 0:renderMood, 1:renderCelebrations, 2:renderExercise, 3:renderMeditation,
+     4:renderWorkTodo, 5:renderGratitude, 6:renderBodyCheckin, 7:renderSocial,
+     8:renderPersonalTodo, 9:renderLearning, 10:renderBodyScan, 11:renderSinging })[id](draft);
+  if (card.dataset.slide !== String(id) || !keepPlayer(card, draft)) card.replaceChildren(...draft.childNodes);
+  card.dataset.slide = id;
+  if (READONLY) freezeSlide(card, id);
+  updateChrome();
+}
+
+// ─── Slide 1: Celebrations ────────────────────────────────────────────────────
+
+function renderCelebrations(el) {
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 1 of 12</div>
+    <div class="slide-title">Today's Celebrations${state.slide1_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="celebration-item">
+        <div class="celebration-name">📏 World Standards Day</div>
+        <div class="celebration-desc">Marked every 14 October by the ISO, the IEC and the ITU to honour the people who write the voluntary technical standards that let things made by strangers work together. <a href="https://en.wikipedia.org/wiki/World_Standards_Day" target="_blank" rel="noopener">Read how the day began</a>.</div>
+      </div>
+      <div class="celebration-item">
+        <div class="celebration-name">🍰 National Dessert Day</div>
+        <div class="celebration-desc">A lighthearted 14 October excuse in the United States to make, share, or simply enjoy something sweet. <a href="https://nationaltoday.com/national-dessert-day/" target="_blank" rel="noopener">National Today has the background</a>.</div>
+      </div>
+      <div class="ways-section">
+        <div class="ways-title">Ways to embrace today</div>
+        <div class="way-item"><span class="way-bullet">→</span><span class="way-text">For World Standards Day, skim <a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener">RFC 9457, the standard for HTTP problem details</a>, before you start on <a href="https://example.com/work/105" target="_blank" rel="noopener">returning problem details from the orders API</a>, and note the one field you'd otherwise have invented yourself.</span></div>
+        <div class="way-item"><span class="way-bullet">→</span><span class="way-text">Then reward yourself with <a href="https://xkcd.com/927/" target="_blank" rel="noopener">xkcd's comic about how standards proliferate</a>, and send it to whoever you'd most like to argue with about it.</span></div>
+        <div class="way-item"><span class="way-bullet">→</span><span class="way-text">For Dessert Day, put the apples from your <a href="https://example.com/personal/204" target="_blank" rel="noopener">farmers market run</a> into King Arthur's <a href="https://www.kingarthurbaking.com/recipes/classic-apple-crisp-recipe" target="_blank" rel="noopener">classic apple crisp</a>, and share it with someone.</span></div>
+      </div>
+      ${doneBanner(state.slide1_done)}
+      <button class="btn-complete ${state.slide1_done?'done':''}" onclick="markDone('slide1_done')">
+        ${state.slide1_done?'✓ Marked complete':'Mark complete'}
+      </button>
+    </div>`;
+}
+
+// ─── Slide 2: Exercise ────────────────────────────────────────────────────────
+
+function renderExercise(el) {
+  const opts = [
+    {key:'A',label:'Strength training'},{key:'B',label:'Running'},
+    {key:'C',label:'Other (free response)'},{key:'D',label:'I did not exercise today'},
+  ];
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 2 of 12</div>
+    <div class="slide-title">Daily Exercise${state.slide2_exercise?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="exercise-options">${opts.map(o=>`
+        <div class="exercise-opt ${state.slide2_exercise===o.key?'selected':''}" onclick="selectExercise('${o.key}')">
+          <div class="exercise-badge">${o.key}</div><div>${o.label}</div>
+        </div>`).join('')}
+      </div>
+      <div id="exerciseNotes" style="margin-top:14px;${state.slide2_exercise==='C'?'':'display:none'}">
+        <label>What did you do?</label>
+        <textarea oninput="state.slide2_notes=this.value;save()">${esc(state.slide2_notes)}</textarea>
+      </div>
+      ${doneBanner(!!state.slide2_exercise)}
+    </div>`;
+}
+function selectExercise(k) { state.slide2_exercise=k; save(); renderSlide(); }
+
+// ─── Slide 3: Meditation (YouTube) ───────────────────────────────────────────
+
+function renderMeditation(el) {
+  const cards = VIDEOS.meditation.map((v,i) => `
+    <div class="yt-card ${state.slide3_video===v.id?'active':''}" data-id="${esc(v.id)}" onclick="selectMedVideo(this.dataset.id)">
+      <img class="yt-thumb" src="https://img.youtube.com/vi/${encodeURIComponent(v.id)}/mqdefault.jpg" alt="${esc(v.style)}" loading="lazy">
+      <div class="yt-card-info">
+        <div class="yt-card-style">${esc(v.style)}</div>
+        <div class="yt-card-title">${esc(v.title)}</div>
+        <div class="yt-card-channel">${esc(v.channel)}</div>
+      </div>
+    </div>`).join('');
+  const embed = videoEmbed(VIDEOS.meditation, state.slide3_video);
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 3 of 12</div>
+    <div class="slide-title">Meditation${state.slide3_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">Choose a style — click a video to play it here, click it again to close it.</p>
+      ${staleVideosNote()}
+      <div class="yt-grid">${cards}</div>
+      ${embed}
+      ${doneBanner(state.slide3_done)}
+      <button class="btn-complete ${state.slide3_done?'done':''}" onclick="markDone('slide3_done')">
+        ${state.slide3_done?'✓ Meditation complete':'Mark meditation complete'}
+      </button>
+    </div>`;
+}
+// The saved video id comes back from the state block, so it is only ever played
+// if it is one of this day's videos.
+// Only the click that picks a video starts it. One restored from the saved answers,
+// or redrawn because something else on the slide changed, waits for its play button.
+let _playNow = false;
+function videoEmbed(videos, id) {
+  const autoplay = _playNow ? '?autoplay=1' : '';
+  _playNow = false;
+  if (!videos.some(v => v.id === id)) return '';
+  return `
+    <div class="yt-embed-wrap">
+      <iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}${autoplay}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>`;
+}
+// Redrawing a video slide built a new player, so marking the slide complete while a
+// video played stopped it. An iframe starts over whenever it leaves the page, even to
+// be put straight back, so when the redrawn slide wants the same video the player
+// stays where it is and the rest of the slide is replaced around it.
+function playerVideo(wrap) {
+  return (wrap.querySelector('iframe')?.getAttribute('src') || '').split('?')[0];
+}
+function keepPlayer(card, draft) {
+  const old = card.querySelector('.yt-embed-wrap'), fresh = draft.querySelector('.yt-embed-wrap');
+  if (!old || !fresh || !playerVideo(old) || playerVideo(old) !== playerVideo(fresh)) return false;
+  const body = old.parentElement, freshBody = fresh.parentElement;
+  if (body.parentElement !== card || freshBody.parentElement !== draft) return false;
+  while (old.previousSibling) old.previousSibling.remove();
+  while (old.nextSibling) old.nextSibling.remove();
+  while (freshBody.firstChild !== fresh) body.insertBefore(freshBody.firstChild, old);
+  while (fresh.nextSibling) body.appendChild(fresh.nextSibling);
+  while (body.previousSibling) body.previousSibling.remove();
+  while (body.nextSibling) body.nextSibling.remove();
+  while (draft.firstChild !== freshBody) card.insertBefore(draft.firstChild, body);
+  return true;
+}
+// When the day's search fails, the last lists are carried forward and the block is
+// marked stale. Both video slides then say so.
+function staleVideosNote() {
+  return VIDEOS.stale ? `<div class="stale-note">⚠ Videos carried forward from ${esc(VIDEOS.fetchedAt)} — today's search failed, so these may be ones you have seen.</div>` : '';
+}
+function selectMedVideo(id) {
+  state.slide3_video = (state.slide3_video===id) ? null : id;
+  save(); _playNow = !!state.slide3_video; renderSlide();
+  if (state.slide3_video) document.querySelector('.yt-embed-wrap')?.scrollIntoView({behavior:'smooth'});
+}
+
+// ─── Slide 4: Work To-Do ─────────────────────────────────────────────────────
+
+function renderWorkTodo(el) {
+  // Only the day's own items count: a saved check for anything else is not one of them.
+  const checked = WORK_TODOS.items.filter(item => (state.slide4_reviewed||{})[item.url] === true).length;
+  const rows = WORK_TODOS.items.map((item,i) => {
+    const isChecked = !!(state.slide4_reviewed||{})[item.url];
+    const shortUrl = String(item.url ?? '').replace(/^https:\/\//i,'');
+    return `
+      <div class="task-item ${isChecked?'checked':''}" onclick="toggleTask(${i})">
+        <div class="task-cb">${isChecked?'✓':''}</div>
+        <div class="task-text">
+          ${esc(item.title)}
+          <span class="task-repo">${esc(item.source)}</span>
+          <a href="${esc(safeUrl(item.url))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ ${esc(shortUrl.substring(0,60))}</a>
+        </div>
+      </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 4 of 12</div>
+    <div class="slide-title">Work To-Do${state.slide4_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="info-box">Review only — ensure accuracy, add/remove as needed. No actual work.</div>
+      ${staleListNote(WORK_TODOS)}
+      ${WORK_TODOS.items.length ? `<div class="task-counter">${checked} of ${WORK_TODOS.items.length} reviewed</div>
+      <div class="task-list">${rows}</div>`
+        : '<div class="todo-empty">The list had no items at generation time.</div>'}
+      <a class="ext-link" href="${esc(safeUrl(WORK_TODOS.listUrl))}" target="_blank" rel="noopener" style="margin-bottom:12px">↗ Open the full list</a>
+      ${doneBanner(state.slide4_done)}
+      <button class="btn-complete ${state.slide4_done?'done':''}" onclick="markDone('slide4_done')">
+        ${state.slide4_done?'✓ List reviewed':'Mark list reviewed'}
+      </button>
+    </div>`;
+}
+// A to-do list whose source could not be reached is carried forward from the last
+// day that reached it, marked stale, and its slide says so (as the video slides do).
+function staleListNote(list) {
+  return list.stale ? `<div class="stale-note">⚠ List carried forward from ${esc(list.fetchedAt)} — today's fetch failed, so it may be out of date.</div>` : '';
+}
+function toggleTask(i) {
+  // Keyed by URL, so a check stays with its item if the list changes.
+  const key = WORK_TODOS.items[i].url;
+  if (!state.slide4_reviewed) state.slide4_reviewed = {};
+  state.slide4_reviewed[key] = !state.slide4_reviewed[key];
+  // The list is taller than its box, and redrawing the slide builds a new one at its
+  // top: put it back where it was, or checking an item far down loses your place.
+  const top = document.querySelector('.task-list')?.scrollTop || 0;
+  save(); renderSlide();
+  const list = document.querySelector('.task-list');
+  if (list) list.scrollTop = top;
+}
+
+// ─── Slide 5: Gratitude ───────────────────────────────────────────────────────
+
+function renderGratitude(el) {
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 5 of 12</div>
+    <div class="slide-title">Gratitude Practice${state.slide5_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <p style="font-size:.92rem;color:var(--muted);margin-bottom:20px">Write 2–3 things you're genuinely grateful for today.</p>
+      ${[1,2,3].map(n=>`
+        <div class="gratitude-row">
+          <div class="gratitude-num">${n}</div>
+          <input type="text" id="g${n}" placeholder="I'm grateful for…" value="${esc(state['slide5_g'+n])}"
+            oninput="state.slide5_g${n}=this.value;save()">
+        </div>`).join('')}
+      ${doneBanner(state.slide5_done)}
+      <button class="btn-complete ${state.slide5_done?'done':''}" onclick="saveGratitude()">
+        ${state.slide5_done?'✓ Saved':'Save entries'}
+      </button>
+    </div>`;
+}
+function saveGratitude() {
+  [1,2,3].forEach(n => state['slide5_g'+n] = document.getElementById('g'+n)?.value || state['slide5_g'+n]);
+  state.slide5_done = true; save(); renderSlide();
+}
+
+// ─── Slide 6: Body Check-In ───────────────────────────────────────────────────
+
+function renderBodyCheckin(el) {
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 6 of 12</div>
+    <div class="slide-title">Body Check-In${state.slide6_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="checkin-row">
+        <div class="checkin-label">Hours of sleep last night</div>
+        <input type="number" min="0" max="24" step=".5" placeholder="e.g. 7.5" value="${esc(state.slide6_sleep)}"
+          oninput="state.slide6_sleep=this.value;save()" style="max-width:160px">
+      </div>
+      <div class="checkin-row">
+        <div class="checkin-label">Glasses of water so far today</div>
+        <input type="number" min="0" max="30" step="1" placeholder="e.g. 3" value="${esc(state.slide6_water)}"
+          oninput="state.slide6_water=this.value;save()" style="max-width:160px">
+      </div>
+      <div class="checkin-row">
+        <div class="checkin-label">Did you eat a real meal today?</div>
+        <div class="checkbox-toggle ${state.slide6_meal?'checked':''}" onclick="toggleMeal()" style="max-width:260px">
+          <div class="check-box">${state.slide6_meal?'✓':''}</div>
+          <span>${state.slide6_meal?'Yes — ate a real meal':'Tap to mark yes'}</span>
+        </div>
+      </div>
+      ${doneBanner(state.slide6_done)}
+      <button class="btn-complete ${state.slide6_done?'done':''}" onclick="saveCheckin()">
+        ${state.slide6_done?'✓ Saved':'Save check-in'}
+      </button>
+    </div>`;
+}
+function toggleMeal() { state.slide6_meal=!state.slide6_meal; save(); renderSlide(); }
+function saveCheckin() {
+  state.slide6_sleep = document.querySelector('input[placeholder="e.g. 7.5"]')?.value || state.slide6_sleep;
+  state.slide6_water = document.querySelector('input[placeholder="e.g. 3"]')?.value || state.slide6_water;
+  state.slide6_done = true; save(); renderSlide();
+}
+
+// ─── Slide 7: Social Connection ───────────────────────────────────────────────
+
+function renderSocial(el) {
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 7 of 12</div>
+    <div class="slide-title">Social Connection${state.slide7_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="social-prompt">
+        <div class="social-prompt-title">Suggested conversation starter</div>
+        "What's a small rule or habit you follow that nobody taught you, but you'd now defend to anyone?"
+      </div>
+      <div style="margin-bottom:16px">
+        <label>Who did you reach out to? (optional)</label>
+        <input type="text" placeholder="Name or relationship…" value="${esc(state.slide7_contact)}"
+          oninput="state.slide7_contact=this.value;save()">
+      </div>
+      ${doneBanner(state.slide7_done)}
+      <button class="btn-complete ${state.slide7_done?'done':''}" onclick="saveSocial()">
+        ${state.slide7_done?'✓ Reached out':'Mark as reached out'}
+      </button>
+    </div>`;
+}
+function saveSocial() {
+  state.slide7_contact = document.querySelector('input[placeholder="Name or relationship…"]')?.value || state.slide7_contact;
+  state.slide7_done = true; save(); renderSlide();
+}
+
+// ─── Slide 8: Personal To-Do ─────────────────────────────────────────────────
+
+function renderPersonalTodo(el) {
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 8 of 12</div>
+    <div class="slide-title">Personal To-Do${state.slide8_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      ${staleListNote(PERSONAL_TODOS)}
+      <div class="todo-box">
+        <div class="todo-title">📋 Today's Goals</div>
+        <div class="todo-sub">${PERSONAL_TODOS.items.length} item${PERSONAL_TODOS.items.length===1?'':'s'} on your list as of this morning.</div>
+        <div class="todo-cards">${PERSONAL_TODOS.items.length
+          ? PERSONAL_TODOS.items.map(c => `<a class="todo-card" href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener"><span class="todo-card-dot"></span>${esc(c.title)}</a>`).join('')
+          : '<div class="todo-empty">The list was empty at generation time.</div>'}</div>
+        <a class="ext-link" href="${esc(safeUrl(PERSONAL_TODOS.listUrl))}" target="_blank" rel="noopener">↗ Open the full list</a>
+      </div>
+      <div class="info-box">Review only — ensure accuracy, add/remove as needed. No actual work.</div>
+      ${scratchNote()}
+      ${doneBanner(state.slide8_done)}
+      <button class="btn-complete ${state.slide8_done?'done':''}" onclick="markDone('slide8_done')">
+        ${state.slide8_done?'✓ Reviewed':'Mark reviewed'}
+      </button>
+    </div>`;
+}
+
+// The scratch note is one note kept in this browser, the same on every day. A past
+// day showed whatever it holds now as if that day had recorded it, so a record
+// leaves it out.
+function scratchNote() {
+  if (READONLY) return '';
+  return `<label>Quick local note (kept in this browser only)</label>
+      <textarea id="localNote" style="min-height:100px" placeholder="Scratch notes for today…"
+        oninput="saveTodos(this.value)">${esc(loadTodos())}</textarea>`;
+}
+
+// ─── Slide 9: Learning & Reading ─────────────────────────────────────────────
+
+function readingPrompt() {
+  // Counted in UTC: local midnights are 23 or 25 hours apart across a DST change,
+  // which made the day after spring-forward repeat the day before's prompt.
+  const [y, m, d] = DATE.split('-').map(Number);
+  const dayOfYear = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 0)) / 86400000);
+  return READING_PROMPTS[dayOfYear % READING_PROMPTS.length];
+}
+
+function renderLearning(el) {
+  const prompt = readingPrompt();
+  const entries = state.slide9_books || {};
+
+  const bookCards = BOOKS.items.map(b => {
+    const pct = b.percent == null ? null : Number(b.percent) || 0;
+    const meta = [b.authors && b.authors.length ? b.authors.join(', ') : null,
+                  pct != null ? pct + '% through' : null].filter(Boolean).join(' · ');
+    return `
+      <div class="book">
+        <div class="book-head">
+          ${b.cover ? `<img class="book-cover" src="${esc(safeUrl(b.cover))}" alt="" loading="lazy">` : '<div class="book-cover book-cover-blank">📖</div>'}
+          <div class="book-meta">
+            <div class="book-title">${b.url ? `<a href="${esc(safeUrl(b.url))}" target="_blank" rel="noopener">${esc(b.title)}</a>` : esc(b.title)}</div>
+            ${meta ? `<div class="book-sub">${esc(meta)}</div>` : ''}
+            ${pct != null ? `<div class="book-bar"><div class="book-bar-fill" style="width:${pct}%"></div></div>` : ''}
+          </div>
+        </div>
+        <textarea class="book-note" placeholder="${esc(prompt)}" data-key="${esc(b.key)}"
+          oninput="setBookNote(this.dataset.key, this.value)">${esc(entries[b.key] || '')}</textarea>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 9 of 12</div>
+    <div class="slide-title">Learning & Reading${state.slide9_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="reading-prompt"><span class="reading-prompt-label">Today's prompt</span>${esc(prompt)}</div>
+      ${BOOKS.stale ? `<div class="stale-note">⚠ Shelf carried forward from ${esc(BOOKS.fetchedAt)} — progress may be out of date.</div>` : ''}
+      ${BOOKS.items.length ? `<div class="books">${bookCards}</div>` : `
+        <div class="shelf-setup">
+          <strong>📚 Nothing on your currently-reading shelf</strong><br>
+          Your shelf listed no books as of ${esc(BOOKS.fetchedAt)}. Start a book there and it
+          will be here the next morning, with its own journal box.
+        </div>`}
+      <label>Anything else you read or learned today?</label>
+      <textarea id="learningInput" placeholder="Article, podcast, conversation, something you looked up…"
+        oninput="state.slide9_learning=this.value;save()">${esc(state.slide9_learning)}</textarea>
+      <a class="ext-link" style="margin-top:14px" href="${esc(safeUrl(BOOKS.shelfUrl))}" target="_blank" rel="noopener">↗ Open your shelf</a>
+      ${doneBanner(state.slide9_done)}
+      <button class="btn-complete ${state.slide9_done?'done':''}" onclick="saveLearning()">
+        ${state.slide9_done?'✓ Saved':'Save entry'}
+      </button>
+    </div>`;
+}
+
+function setBookNote(key, value) {
+  if (!state.slide9_books) state.slide9_books = {};
+  state.slide9_books[key] = value;
+  save();
+}
+
+function saveLearning() {
+  state.slide9_learning = document.getElementById('learningInput')?.value || state.slide9_learning;
+  state.slide9_done = true; save(); renderSlide();
+}
+
+// ─── Slide 10: Body Scan & Stretch (YouTube) ──────────────────────────────────
+
+function renderBodyScan(el) {
+  const cards = VIDEOS.body.map(v => `
+    <div class="yt-card ${state.slide10_video===v.id?'active':''}" data-id="${esc(v.id)}" onclick="selectBodyVideo(this.dataset.id)">
+      <img class="yt-thumb" src="https://img.youtube.com/vi/${encodeURIComponent(v.id)}/mqdefault.jpg" alt="${esc(v.style)}" loading="lazy">
+      <div class="yt-card-info">
+        <div class="yt-card-style">${esc(v.style)}</div>
+        <div class="yt-card-title">${esc(v.title)}</div>
+        <div class="yt-card-channel">${esc(v.channel)}</div>
+      </div>
+    </div>`).join('');
+  const embed = videoEmbed(VIDEOS.body, state.slide10_video);
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 10 of 12</div>
+    <div class="slide-title">Body Scan & Stretch${state.slide10_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">A short 2–5 minute practice to reconnect with your body.</p>
+      ${staleVideosNote()}
+      <div class="yt-grid" style="grid-template-columns:repeat(2,1fr)">${cards}</div>
+      ${embed}
+      ${doneBanner(state.slide10_done)}
+      <button class="btn-complete ${state.slide10_done?'done':''}" onclick="markDone('slide10_done')">
+        ${state.slide10_done?'✓ Complete':'Mark complete'}
+      </button>
+    </div>`;
+}
+function selectBodyVideo(id) {
+  state.slide10_video = (state.slide10_video===id) ? null : id;
+  save(); _playNow = !!state.slide10_video; renderSlide();
+  if (state.slide10_video) document.querySelector('.yt-embed-wrap')?.scrollIntoView({behavior:'smooth'});
+}
+
+// ─── Slide 11: Singing Warmup ────────────────────────────────────────────────
+
+function renderSinging(el) {
+  if (singingDone.every(Boolean)) {
+    if (!READONLY && !state.slide11_done) { state.slide11_done=true; save(); }
+    // On a past day the steps can still be walked through, which is not doing the
+    // warmup: the end only says "complete" if the day recorded it.
+    const done = state.slide11_done;
+    el.innerHTML = `
+      <div class="slide-eyebrow">Slide 11 of 12</div>
+      <div class="slide-title">Singing Warmup${done?' <span class="done-check">✓</span>':''}</div>
+      <div class="slide-body">
+        <div class="warmup-final">
+          <div class="warmup-final-title">${done?'Warmup complete!':'End of the warmup'}</div>
+          <div style="font-size:.9rem;color:#2d5a3d;margin-top:6px">Train it light, frequent, and boring. The ceiling rises when you stop pushing at it.</div>
+        </div>
+        <button class="btn-complete done" style="margin-top:20px">✓ Warmup complete</button>
+        <button class="btn btn-ghost" style="margin-top:12px;align-self:flex-start" onclick="restartWarmup()">↺ Go through the steps again</button>
+      </div>`;
+    return;
+  }
+  const step = SINGING_STEPS[singingStep];
+  const dots = SINGING_STEPS.map((_,i)=>`<div class="warmup-dot ${i<singingStep?'past':i===singingStep?'active':''}"></div>`).join('');
+  const exHtml = step.exercises.map((ex,ei) => {
+    const titleHtml = renderNoteList(ex.title);
+    const notesHtml = ex.notes.map(parts=>`<li>${renderNoteList(parts)}</li>`).join('');
+    return `
+      ${ei>0?'<div class="warmup-divider"></div>':''}
+      <div style="margin-bottom:14px">
+        <div class="warmup-ex-title">${titleHtml}</div>
+        <ul class="warmup-notes">${notesHtml}</ul>
+        ${ex.think?`<div class="think-box">${esc(ex.think)}</div>`:''}
+        ${ex.warn?`<div class="warning-box">⚠ ${renderNoteList(ex.warn)}</div>`:''}
+      </div>`;
+  }).join('');
+  const r  = singingRemain[singingStep];
+  const mm = String(Math.floor(r/60)).padStart(2,'0');
+  const ss = String(r%60).padStart(2,'0');
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 11 of 12</div>
+    <div class="slide-title">Singing Warmup${state.slide11_done?' <span class="done-check">✓</span>':''}</div>
+    <div class="slide-body">
+      <div class="warmup-progress">${dots}</div>
+      <div class="warmup-step">
+        <div class="warmup-step-header">
+          <span class="warmup-step-name">${renderNoteList(step.name)}</span>
+          <span class="warmup-step-dur">${esc(step.dur)}</span>
+        </div>
+        <div class="warmup-divider"></div>
+        ${exHtml}
+        <div class="timer-block">
+          <div class="timer-display" id="timerDisplay">${mm}:${ss}</div>
+          <div class="timer-controls">
+            <button class="timer-btn start" id="timerToggle" onclick="toggleSingingTimer()">${singingRunning?'Pause':'Start timer'}</button>
+            <button class="timer-btn" onclick="resetSingingTimer()">Reset</button>
+          </div>
+        </div>
+        <div class="warmup-step-nav">
+          <button class="btn btn-ghost" ${singingStep===0?'disabled':''} onclick="singingNav(-1)">← Previous</button>
+          <button class="btn btn-primary" onclick="singingNav(1)">${singingStep===SINGING_STEPS.length-1?'Finish warmup':'Next step →'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+function toggleSingingTimer() {
+  if (singingRunning) { stopSingingTimer(); document.getElementById('timerToggle').textContent = 'Start timer'; }
+  else {
+    // A countdown that has run out starts over, rather than starting at zero.
+    if (singingRemain[singingStep] <= 0) singingRemain[singingStep] = SINGING_STEPS[singingStep].seconds;
+    singingRunning = true;
+    document.getElementById('timerToggle').textContent = 'Pause';
+    // Counted against the clock, not the ticks: a browser slows or stops the ticks of
+    // a page in the background or behind a locked screen, and the step ran on anyway.
+    const endsAt = Date.now() + singingRemain[singingStep] * 1000;
+    singingInterval = setInterval(() => {
+      if (singingRemain[singingStep] <= 0) { stopSingingTimer(); return; }
+      singingRemain[singingStep] = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+      const r=singingRemain[singingStep];
+      const d=document.getElementById('timerDisplay');
+      if (d) d.textContent=String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');
+      if (r===0) { stopSingingTimer(); const t=document.getElementById('timerToggle'); if(t) t.textContent='Start timer'; }
+    }, 1000);
+  }
+}
+function stopSingingTimer() { clearInterval(singingInterval); singingInterval=null; singingRunning=false; }
+function resetSingingTimer() { stopSingingTimer(); singingRemain[singingStep]=SINGING_STEPS[singingStep].seconds; renderSlide(); }
+// The end of the warmup used to be the end of its pitch buttons and timers until
+// the page was reloaded. Going round again does not undo the day's completion.
+function restartWarmup() {
+  stopSingingTimer();
+  singingStep = 0;
+  singingDone = [false,false,false,false];
+  singingRemain = SINGING_STEPS.map(s => s.seconds);
+  renderSlide();
+}
+function singingNav(dir) {
+  stopSingingTimer();
+  if (dir===1) singingDone[singingStep]=true;
+  const next=singingStep+dir;
+  if (next<0) return;
+  if (next>=SINGING_STEPS.length) { singingDone[singingStep]=true; renderSlide(); return; }
+  singingStep=next; renderSlide();
+}
+
+// ─── Slide 0: Mood ───────────────────────────────────────────────────────────
+
+const MOOD_Q = [
+  {key:'ha-neg',label:'High energy · Unpleasant',cls:'mood-q-ha-neg',emotions:['Angry','Anxious','Stressed','Frustrated','Overwhelmed','Alarmed']},
+  {key:'ha-pos',label:'High energy · Pleasant',  cls:'mood-q-ha-pos',emotions:['Excited','Happy','Enthusiastic','Energized','Joyful','Inspired']},
+  {key:'la-neg',label:'Low energy · Unpleasant', cls:'mood-q-la-neg',emotions:['Sad','Tired','Depressed','Hopeless','Lonely','Disconnected']},
+  {key:'la-pos',label:'Low energy · Pleasant',   cls:'mood-q-la-pos',emotions:['Calm','Content','Peaceful','Relaxed','Grateful','Serene']},
+];
+function renderMood(el) {
+  el.innerHTML = `
+    <div class="slide-eyebrow">Slide 12 of 12</div>
+    <div class="slide-title">How are you feeling?</div>
+    <div class="slide-body">
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:4px"><span>← Negative</span><span>Positive →</span></div>
+      <div class="mood-grid">${MOOD_Q.map(q=>`
+        <div class="mood-q ${q.cls} ${state.mood===q.key?'selected':''}" onclick="selectMood('${q.key}')">
+          <div class="mood-q-label">${q.label}</div>
+          ${state.mood===q.key ? `<div class="mood-chips">${q.emotions.map(e=>`
+            <button class="mood-chip ${state.mood_emotion===e?'on':''}" onclick="event.stopPropagation();selectEmotion('${e}')">${e}</button>`).join('')}</div>`
+          : `<div class="mood-q-emotions">${q.emotions.join(' · ')}</div>`}
+        </div>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:12px"><span>↑ High arousal</span><span>Low arousal ↓</span></div>
+      <div class="mood-selected">${moodSummary()}</div>
+    </div>`;
+}
+function moodSummary() {
+  const q = MOOD_Q.find(q => q.key === state.mood);
+  if (!q) return READONLY ? 'Not recorded' : 'Select a quadrant above';
+  if (state.mood_emotion) return '✓ ' + esc(state.mood_emotion) + ' — ' + q.label;
+  return READONLY ? '✓ ' + q.label : 'Now pick the word closest to how you feel';
+}
+// The quadrant narrows the choice; the emotion is picked from that quadrant's words.
+// Switching quadrants clears an emotion that belongs to the old one.
+function selectMood(key) {
+  if (READONLY || state.mood === key) return;
+  state.mood = key; state.mood_emotion = null; save(); renderSlide();
+}
+function selectEmotion(emotion) {
+  const q = MOOD_Q.find(q => q.key === state.mood);
+  if (READONLY || !q || !q.emotions.includes(emotion)) return;
+  state.mood_emotion = emotion; save(); renderSlide();
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// ─── Read-only record mode ──────────────────────────────────────────────────
+//
+// A past day is a record, not a form. Rather than every render function growing a
+// second markup path, the rendered slide is transformed once, after render: every
+// input and textarea becomes a paragraph carrying its saved value, and every
+// control that would mutate state is made inert. Values are written with
+// textContent, so nothing a field holds can be parsed as markup.
+
+function prettyDate(iso) {
+  const [y,m,d] = iso.split('-').map(Number);
+  const MONTHS = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+  return MONTHS[m-1] + ' ' + d + ', ' + y;
+}
+
+function freezeSlide(el, slideId) {
+  // 1. Inputs and textareas become paragraphs holding what was recorded.
+  el.querySelectorAll('input[type=text], input[type=number], textarea').forEach(node => {
+    const v = (node.value || '').trim();
+    const p = document.createElement('p');
+    p.className = 'record-value' + (v ? '' : ' record-empty');
+    p.textContent = v || 'Not recorded';   // textContent: never parsed as markup
+    node.replaceWith(p);
+  });
+
+  // 2. The meal toggle reads as an instruction; a record needs an answer.
+  el.querySelectorAll('.checkbox-toggle').forEach(node => {
+    const on = node.classList.contains('checked');
+    const span = node.querySelector('span');
+    if (span) span.textContent = on ? 'Yes — ate a real meal' : state.slide6_done ? 'No' : 'Not recorded';
+    node.classList.add('frozen');
+    if (!on) node.classList.add('dim');
+  });
+
+  // 3. Selection grids stay visible so the choice has context, but go inert.
+  el.querySelectorAll('.exercise-opt, .mood-q, .mood-chip:not(.on)').forEach(node => {
+    node.classList.add('frozen');
+    if (!node.classList.contains('selected')) node.classList.add('dim');
+  });
+  el.querySelectorAll('.task-item').forEach(node => node.classList.add('frozen'));
+  // The exercise choice is an answer too, so it is said in words as well as highlighted.
+  const exercise = el.querySelector('.exercise-options');
+  if (exercise) {
+    const chosen = exercise.querySelector('.exercise-opt.selected');
+    const p = document.createElement('p');
+    p.className = 'record-value' + (chosen ? '' : ' record-empty');
+    p.style.marginTop = '14px';
+    p.textContent = chosen ? chosen.lastElementChild.textContent : 'Not recorded';
+    exercise.after(p);
+  }
+
+  // 4. Strip the handlers that write state. Video thumbnails, pitch buttons and
+  //    the singing timer keep working — playing something back is not editing.
+  el.querySelectorAll('.exercise-opt, .mood-q, .mood-chip, .task-item, .checkbox-toggle, .btn-complete')
+    .forEach(node => { node.removeAttribute('onclick'); node.onclick = null; });
+  el.querySelectorAll('[oninput]').forEach(node => { node.removeAttribute('oninput'); node.oninput = null; });
+
+  // 5. One completion line replaces the button and the "marked complete" banner.
+  el.querySelectorAll('.done-banner').forEach(node => node.remove());
+  const btn = el.querySelector('.btn-complete');
+  if (btn || slideId !== 0) {
+    const done = isSlideDone(slideId);
+    const status = document.createElement('div');
+    status.className = 'record-status ' + (done ? 'yes' : 'no');
+    status.textContent = done ? '✓ Completed' : '○ Not completed';
+    if (btn) btn.replaceWith(status);
+    else (el.querySelector('.slide-body') || el).appendChild(status);
+  }
+
+  // 6. Say plainly what this page is.
+  const body = el.querySelector('.slide-body');
+  if (body) {
+    const note = document.createElement('div');
+    note.className = 'readonly-note';
+    note.textContent = '🔒 Record for ' + prettyDate(DATE) + ' — read only.';
+    body.insertBefore(note, body.firstChild);
+  }
+}
+
+function markDone(key) { if (READONLY) return; state[key]=true; save(); renderSlide(); }
+function doneBanner(done) { return done?`<div class="done-banner"><span>✓</span> Marked complete for today</div>`:''; }
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// Fetched links are data, not code: anything but https (javascript:, data:) becomes inert.
+function safeUrl(u) { return /^https:\/\//i.test(String(u ?? '')) ? String(u) : '#'; }
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+function showReadonlyBadge() {
+  const btn = document.getElementById('saveBtn');
+  if (btn) {
+    const badge = document.createElement('span');
+    badge.className = 'readonly-badge';
+    badge.textContent = '🔒 Record · read only';
+    btn.replaceWith(badge);
+  }
+}
+if (READONLY) showReadonlyBadge();
+
+renderSlide();
+
+// A newer local copy means the server missed a save: send it back now rather
+// than waiting for the 30-second timer.
+if (!READONLY && _dirty) saveToServer();
+</script>
+</body>
+</html>
