@@ -4,6 +4,7 @@ time: 50m
 background: images/background.png
 font: avenir-next
 title-font: iowan-old-style charter palatino georgia
+tags: slides
 -----
 
 # Built For Today
