@@ -1,0 +1,16 @@
+name: Presentation - Export
+
+on:
+  push:
+    paths: [presentation.md, images/**]
+  
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jzheaux/reader@5c06859cca8e8822ed1f4ed07f817493c37d89f6 # main
+        with:
+          files: presentation.md
