@@ -1,0 +1,21 @@
+{
+  "name": "daily-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A daily introspection slideshow: a spec, its tests, and one generated day. Answers are saved back into each day's HTML file.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "verify": "node verify-dashboard.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}
